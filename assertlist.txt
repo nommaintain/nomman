@@ -1,0 +1,14 @@
+# Tips for creating the user-defined "assert" list:
+# - always create 2 sections: [accept] & [reject]; even if you plan to leave one section entirely empty
+# - start a comment line with "#"; inline comments are NOT acceptable
+# - replacement names for "reject" entries are optional; don't specify replacement names for "accept" entries
+# - matching is done in a case-sensitive manner
+
+[accept]
+Klebsiella singaporensis
+
+[reject]
+# use || to specify replacement name for the rejected name
+VTSA
+ESBL || ESBL producers
+AmpC

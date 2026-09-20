@@ -1,0 +1,26 @@
+# config.toml
+## Sample config.toml for Nomman
+## All fields listed below are MANDATORY; do not delete or comment the line but specify an empty value to disable it
+[auth_providers]
+## Order specified by positive integers: a smaller number has higher priority
+## Disable the authority provider by specifying a negative integer like -1
+# User assert list
+assert_rank = 1
+assert_file = "assertlist.txt"
+# LPSN offline DB file
+lpsn_rank = -1
+lpsn_file = "datafiles/lpsn_gss_2026-08.csv.xz"
+# Mycobank offline DB file
+mycb_rank = -1
+mycb_file = "datafiles/MBList.csv.xz"
+
+[domains]
+# If you want to load a domain definitons file by default, indicate the filename here.
+# Example: domains_file = "domains.txt"
+# Else the domain definitions file can also be specified in the command-line
+domains_file = ""
+
+[lpsn_api]
+# Replace the field below with your LPSN username, e.g. username = "xxx@email.com"
+# If not using associated functionality, it is fine to leave it blank
+username = ""

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NOMMAN Run Report</title>
+
+    <!-- Theme Initialization Script (Prevents FOUC/flashing on reload) -->
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('nomman-theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+
+    <!-- Pico CSS v2 CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+
+    <style>
+        /* ==========================================================================
+           Theme & Color Tokens
+           ========================================================================== */
+        :root,
+        [data-theme="light"] {
+            --color-valid-bg: #dcfce7;
+            --color-valid-border: #86efac;
+            --color-valid-text: #14532d;
+            --color-valid-accent: #15803d;
+
+            --color-repl-bg: #fef3c7;
+            --color-repl-border: #fcd34d;
+            --color-repl-text: #78350f;
+            --color-repl-accent: #b45309;
+
+            --color-norepl-bg: #fee2e2;
+            --color-norepl-border: #fca5a5;
+            --color-norepl-text: #991b1b;
+            --color-norepl-accent: #dc2626;
+
+            --color-unmatched-bg: #f1f5f9;
+            --color-unmatched-border: #cbd5e1;
+            --color-unmatched-text: #334155;
+            --color-unmatched-accent: #64748b;
+
+            --card-border-subtle: #e2e8f0;
+            --tag-border: rgba(0, 0, 0, 0.08);
+            --sys-dot-active: #0284c7;
+            --sys-dot-inactive: #94a3b8;
+        }
+
+        [data-theme="dark"] {
+            --color-valid-bg: rgba(34, 197, 94, 0.16);
+            --color-valid-border: rgba(74, 222, 128, 0.35);
+            --color-valid-text: #4ade80;
+            --color-valid-accent: #86efac;
+
+            --color-repl-bg: rgba(245, 158, 11, 0.18);
+            --color-repl-border: rgba(251, 191, 36, 0.35);
+            --color-repl-text: #fbbf24;
+            --color-repl-accent: #fde047;
+
+            --color-norepl-bg: rgba(239, 68, 68, 0.2);
+            --color-norepl-border: rgba(248, 113, 113, 0.35);
+            --color-norepl-text: #f87171;
+            --color-norepl-accent: #fca5a5;
+
+            --color-unmatched-bg: rgba(148, 163, 184, 0.15);
+            --color-unmatched-border: rgba(148, 163, 184, 0.28);
+            --color-unmatched-text: #cbd5e1;
+            --color-unmatched-accent: #94a3b8;
+
+            --card-border-subtle: #334155;
+            --tag-border: rgba(255, 255, 255, 0.12);
+            --sys-dot-active: #38bdf8;
+            --sys-dot-inactive: #64748b;
+        }
+
+        /* Wide Container Layout */
+        .app-container {
+            width: 96%;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.25rem 1rem 3rem 1rem;
+        }
+
+        /* Header Layout */
+        .report-header {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+            padding-bottom: 1rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-titles h1 {
+            margin-bottom: 0.2rem;
+            font-size: 1.85rem;
+        }
+
+        .header-subtitle {
+            opacity: 0.8;
+            margin-bottom: 0;
+            font-size: 0.95rem;
+        }
+
+        .theme-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.85rem;
+            margin-bottom: 0;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            text-align: center;
+            padding: 1.1rem 0.85rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--card-border-subtle);
+            border-top: 4px solid var(--kpi-border, var(--pico-muted-border-color));
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .kpi-num {
+            font-size: 2.1rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 0.3rem;
+        }
+
+        .kpi-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            opacity: 0.85;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .kpi-total {
+            --kpi-border: var(--color-unmatched-accent);
+            --kpi-text: var(--pico-color);
+        }
+        .kpi-total .kpi-num { color: var(--kpi-text); }
+
+        .kpi-valid {
+            --kpi-border: var(--color-valid-accent);
+            --kpi-text: var(--color-valid-text);
+        }
+        .kpi-valid .kpi-num { color: var(--kpi-text); }
+
+        .kpi-repl {
+            --kpi-border: var(--color-repl-accent);
+            --kpi-text: var(--color-repl-text);
+        }
+        .kpi-repl .kpi-num { color: var(--kpi-text); }
+
+        .kpi-unmatched {
+            --kpi-border: var(--color-unmatched-border);
+            --kpi-text: var(--color-unmatched-text);
+        }
+        .kpi-unmatched .kpi-num { color: var(--kpi-text); }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            border-width: 1px;
+            border-style: solid;
+        }
+
+        .badge-valid {
+            background-color: var(--color-valid-bg);
+            color: var(--color-valid-text);
+            border-color: var(--color-valid-border);
+        }
+
+        .badge-repl {
+            background-color: var(--color-repl-bg);
+            color: var(--color-repl-text);
+            border-color: var(--color-repl-border);
+        }
+
+        .badge-norepl {
+            background-color: var(--color-norepl-bg);
+            color: var(--color-norepl-text);
+            border-color: var(--color-norepl-border);
+        }
+
+        .badge-unmatched {
+            background-color: var(--color-unmatched-bg);
+            color: var(--color-unmatched-text);
+            border-color: var(--color-unmatched-border);
+        }
+
+        /* Domain Impact Tags */
+        .tag-lost {
+            background-color: var(--color-norepl-bg);
+            color: var(--color-norepl-text);
+            border: 1px solid var(--color-norepl-border);
+            padding: 0.18rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.76rem;
+            margin: 0.1rem;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .tag-gained {
+            background-color: var(--color-valid-bg);
+            color: var(--color-valid-text);
+            border: 1px solid var(--color-valid-border);
+            padding: 0.18rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.76rem;
+            margin: 0.1rem;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .impact-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.2rem;
+        }
+
+        /* Table & Specific Column Styling */
+        .taxon-name {
+            font-style: italic;
+            font-weight: 600;
+        }
+
+        .taxon-aliases {
+            font-size: 0.78rem;
+            opacity: 0.75;
+            margin-top: 0.2rem;
+            line-height: 1.25;
+        }
+
+        .replacement-name {
+            color: var(--pico-primary);
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .system-presence {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .sys-badge-active {
+            color: var(--sys-dot-active);
+            font-size: 1.15rem;
+            line-height: 1;
+        }
+
+        .sys-badge-inactive {
+            color: var(--sys-dot-inactive);
+            opacity: 0.35;
+            font-size: 1.15rem;
+            line-height: 1;
+        }
+
+        .suggestions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            font-size: 0.78rem;
+        }
+
+        .suggestion-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.15rem 0.35rem;
+            background-color: var(--color-unmatched-bg);
+            border-radius: 4px;
+            border: 1px solid var(--tag-border);
+        }
+
+        .suggestion-score {
+            font-family: monospace;
+            font-weight: 600;
+            opacity: 0.8;
+            font-size: 0.75rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 0.5rem;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .table-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.25rem;
+            border: 1px solid var(--card-border-subtle);
+        }
+
+        .authority-card {
+            border: 1px solid var(--card-border-subtle);
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .authority-summary {
+            font-size: 0.8rem;
+            white-space: pre-line;
+            margin-top: 0.5rem;
+            border-top: 1px solid var(--pico-muted-border-color);
+            padding: 0.65rem 0.75rem;
+            background-color: var(--color-unmatched-bg);
+        }
+
+        .run-info-list {
+            line-height: 1.7;
+        }
+
+        /* ==========================================================================
+           Print & PDF Export Optimization
+           ========================================================================== */
+        @media print {
+            @page {
+                size: landscape;
+                margin: 8mm;
+            }
+
+            :root, [data-theme="light"], [data-theme="dark"] {
+                --pico-background-color: #ffffff !important;
+                --pico-color: #0f172a !important;
+                --card-border-subtle: #cbd5e1 !important;
+                --color-valid-bg: #ecfdf5 !important;
+                --color-valid-border: #a7f3d0 !important;
+                --color-valid-text: #065f46 !important;
+                --color-repl-bg: #fefce8 !important;
+                --color-repl-border: #fde047 !important;
+                --color-repl-text: #854d0e !important;
+                --color-norepl-bg: #fef2f2 !important;
+                --color-norepl-border: #fca5a5 !important;
+                --color-norepl-text: #991b1b !important;
+                --color-unmatched-bg: #f8fafc !important;
+                --color-unmatched-border: #cbd5e1 !important;
+                --color-unmatched-text: #334155 !important;
+                --sys-dot-active: #0284c7 !important;
+                --sys-dot-inactive: #94a3b8 !important;
+            }
+
+            body {
+                background-color: #ffffff !important;
+                color: #0f172a !important;
+                font-size: 7.5pt !important;
+                line-height: 1.25 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .app-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Hide interactive UI during print */
+            .theme-toggle-btn,
+            .filter-section,
+            #search,
+            #status-filter,
+            #system-filter,
+            .table-header-bar button {
+                display: none !important;
+            }
+
+            /* Expand audit trail metadata during print */
+            details > * {
+                display: block !important;
+            }
+            details summary {
+                display: block !important;
+                font-weight: bold !important;
+                font-size: 8.5pt !important;
+                margin-bottom: 4px !important;
+                list-style: none !important;
+            }
+
+            /* Disable overflow clipping so all table columns print completely */
+            .table-responsive {
+                overflow: visible !important;
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
+
+            table {
+                width: 100% !important;
+                table-layout: auto !important;
+                font-size: 7pt !important;
+                border-collapse: collapse !important;
+            }
+
+            thead {
+                display: table-header-group !important;
+            }
+
+            tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            th, td {
+                padding: 3px 4px !important;
+                word-break: break-word !important;
+            }
+
+            .kpi-card {
+                padding: 0.35rem 0.5rem !important;
+                margin-bottom: 0.4rem !important;
+            }
+
+            .kpi-num {
+                font-size: 1.3rem !important;
+            }
+
+            .kpi-label {
+                font-size: 0.65rem !important;
+            }
+
+            .report-header {
+                margin-bottom: 0.6rem !important;
+                padding-bottom: 0.4rem !important;
+            }
+
+            .header-titles h1 {
+                font-size: 1.3rem !important;
+            }
+
+            .header-subtitle {
+                font-size: 0.75rem !important;
+            }
+
+            .badge {
+                padding: 0.1rem 0.35rem !important;
+                font-size: 6.5pt !important;
+            }
+
+            .tag-lost, .tag-gained {
+                padding: 0.1rem 0.35rem !important;
+                font-size: 6.5pt !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app-container">
+        <!-- Reactive VanJS Mount Point -->
+        <div id="app"></div>
+    </main>
+
+    <!-- VanJS v1.6.1 non-module script -->
+    <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.6.1.nomodule.min.js"></script>
+
+    <!-- Injected Data Payload -->
+    <script id="report-data" type="application/json">
+        $data_payload
+    </script>
+
+    <!-- Reactive Rendering Script -->
+    <script type="text/javascript">
+        // Read text content and parse as JSON
+        const dataElement = document.getElementById("report-data");
+        const reportData = JSON.parse(dataElement.textContent);
+        dataElement.remove(); // Free payload string memory
+
+        const { div, h1, h3, h4, p, table, thead, tbody, tr, th, td, input, label, select, option, article, details, summary, header, span, kbd, ul, li, button } = van.tags;
+
+        // Theme Reactive State
+        const currentTheme = van.state(document.documentElement.getAttribute("data-theme") || "light");
+
+        const toggleTheme = () => {
+            const nextTheme = currentTheme.val === "dark" ? "light" : "dark";
+            currentTheme.val = nextTheme;
+            document.documentElement.setAttribute("data-theme", nextTheme);
+            localStorage.setItem("nomman-theme", nextTheme);
+        };
+
+        // Filter States
+        const filterText = van.state("");
+        const selectedStatus = van.state("ALL");
+        const selectedSystem = van.state("ALL");
+
+        // KPI Calculations
+        const stats = {
+            total: reportData.results.length,
+            valid: reportData.results.filter(r => r.is_adopted).length,
+            actionRequired: reportData.results.filter(r => r.validation.status === "invalid_with_replacement" || r.validation.status === "invalid_no_replacement").length,
+            unmatched: reportData.results.filter(r => r.validation.status === "unmatched").length
+        };
+
+        // Header Component with Theme Switcher
+        const Header = () => {
+            return header({ class: "report-header" },
+                div({ class: "header-content" },
+                    div({ class: "header-titles" },
+                        h1("NOMMAN Run Report"),
+                        p({ class: "header-subtitle" }, "Clinical Microbiology Nomenclature & Taxonomy Audit (CLSI M64 • CAP MIC.11375)")
+                    ),
+                    div({},
+                        button({
+                            type: "button",
+                            class: "outline theme-toggle-btn",
+                            onclick: toggleTheme,
+                            "aria-label": "Toggle light/dark theme"
+                        },
+                            () => currentTheme.val === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"
+                        )
+                    )
+                )
+            );
+        };
+
+        // KPI Summary Component
+        const KpiDashboard = () => {
+            return div({ class: "grid" },
+                article({ class: "kpi-card kpi-total" },
+                    div({ class: "kpi-num" }, stats.total),
+                    div({ class: "kpi-label" }, "Total Analyzed")
+                ),
+                article({ class: "kpi-card kpi-valid" },
+                    div({ class: "kpi-num" }, stats.valid),
+                    div({ class: "kpi-label" }, "Adopted / Valid")
+                ),
+                article({ class: "kpi-card kpi-repl" },
+                    div({ class: "kpi-num" }, stats.actionRequired),
+                    div({ class: "kpi-label" }, "Action Required")
+                ),
+                article({ class: "kpi-card kpi-unmatched" },
+                    div({ class: "kpi-num" }, stats.unmatched),
+                    div({ class: "kpi-label" }, "Unmatched Input")
+                )
+            );
+        };
+
+        // Collapsible Metadata Panel
+        const AuditTrail = () => {
+            return details({ style: "margin-bottom: 1.25rem;" },
+                summary({ style: "font-weight: 600; cursor: pointer;" }, "📋 Run Metadata & Audit Trail (CAP/CLSI Compliance Record)"),
+                article({ style: "margin-top: 0.75rem; border: 1px solid var(--card-border-subtle);" },
+                    h4("Run Context Information"),
+                    ul({ class: "run-info-list" },
+                        li(span({ style: "font-weight: 600" }, "Command Line: "), kbd(reportData.run_info.command_line)),
+                        li(span({ style: "font-weight: 600" }, "Execution Timestamp: "), span(reportData.run_info.timestamp)),
+                        li(span({ style: "font-weight: 600" }, "Host Platform: "), span(reportData.run_info.platform)),
+                        li(span({ style: "font-weight: 600" }, "Python Runtime: "), span(reportData.run_info.python_version))
+                    ),
+                    h4({ style: "margin-top: 1.25rem;" }, "Configured Nomenclature Authorities"),
+                    div({ class: "grid" },
+                        ...reportData.authorities.map(auth => article({ class: "authority-card" },
+                            header({ style: "font-weight: bold; padding: 0.55rem 0.75rem;" }, `${auth.name} (Priority Rank: ${auth.rank})`),
+                            div({ style: "padding: 0.65rem 0.75rem;" },
+                                p({ style: "margin-bottom: 0.3rem; font-size: 0.82rem;" }, span({ style: "font-weight: 600;" }, "File Source: "), kbd(auth.source_file)),
+                                p({ style: "margin-bottom: 0.3rem; font-size: 0.82rem;" }, span({ style: "font-weight: 600;" }, "SHA-256: "), kbd({ style: "font-size: 0.75rem; word-break: break-all;" }, auth.checksum))
+                            ),
+                            div({ class: "authority-summary" }, auth.summary)
+                        ))
+                    )
+                )
+            );
+        };
+
+        // Search & Filtering Bar
+        const FiltersToolbar = () => {
+            return article({ class: "filter-section" },
+                div({ class: "grid" },
+                    div({},
+                        label({ for: "search" }, "Search Organism"),
+                        input({
+                            id: "search",
+                            type: "search",
+                            placeholder: "Filter name, replacement, reason, alias...",
+                            oninput: e => filterText.val = e.target.value
+                        })
+                    ),
+                    div({},
+                        label({ for: "status-filter" }, "Nomenclature Status"),
+                        select({
+                            id: "status-filter",
+                            onchange: e => selectedStatus.val = e.target.value
+                        },
+                            option({ value: "ALL" }, "Show All Statuses"),
+                            option({ value: "valid" }, "Valid Name"),
+                            option({ value: "invalid_with_replacement" }, "Action Required (With Replacement)"),
+                            option({ value: "invalid_no_replacement" }, "Action Required (No Replacement)"),
+                            option({ value: "unmatched" }, "Unmatched")
+                        )
+                    ),
+                    div({},
+                        label({ for: "system-filter" }, "Laboratory Platform"),
+                        select({
+                            id: "system-filter",
+                            onchange: e => selectedSystem.val = e.target.value
+                        },
+                            option({ value: "ALL" }, "Show All Systems"),
+                            ...reportData.all_systems.map(sys => option({ value: sys }, sys))
+                        )
+                    )
+                )
+            );
+        };
+
+        // Render formatted badges for verification state
+        const renderBadge = (status) => {
+            const labelStr = status.replaceAll('_', ' ').toUpperCase();
+            if (status === "valid") {
+                return span({ class: "badge badge-valid" }, "✓ ", labelStr);
+            } else if (status === "invalid_with_replacement") {
+                return span({ class: "badge badge-repl" }, "⚠ ", labelStr);
+            } else if (status === "invalid_no_replacement") {
+                return span({ class: "badge badge-norepl" }, "✗ ", labelStr);
+            } else {
+                return span({ class: "badge badge-unmatched" }, "? ", labelStr);
+            }
+        };
+
+        // Dynamic Table component derived from reactive filter states
+        const ResultsTable = () => {
+            return () => {
+                const searchVal = filterText.val.trim().toLowerCase();
+                const statusFilter = selectedStatus.val;
+                const systemFilter = selectedSystem.val;
+
+                const filtered = reportData.results.filter(r => {
+                    const matchesSearch = !searchVal ||
+                        r.taxon.toLowerCase().includes(searchVal) ||
+                        (r.validation.reason && r.validation.reason.toLowerCase().includes(searchVal)) ||
+                        (r.validation.replacement && r.validation.replacement.toLowerCase().includes(searchVal)) ||
+                        (r.aliases && r.aliases.some(alias => alias.toLowerCase().includes(searchVal)));
+                    const matchesStatus = statusFilter === "ALL" || r.validation.status === statusFilter;
+                    const matchesSystem = systemFilter === "ALL" || r.active_systems.includes(systemFilter);
+                    return matchesSearch && matchesStatus && matchesSystem;
+                });
+
+                const isFiltered = filterText.val !== "" || selectedStatus.val !== "ALL" || selectedSystem.val !== "ALL";
+
+                return div({},
+                    div({ class: "table-header-bar" },
+                        h3({ style: "margin-bottom: 0;" }, "Nomenclature Classification Results"),
+                        div({ style: "display: flex; align-items: center; gap: 0.75rem;" },
+                            span({ class: "badge", style: "background-color: var(--color-unmatched-bg); color: var(--color-unmatched-text); border: 1px solid var(--color-unmatched-border);" },
+                                `Showing ${filtered.length} of ${reportData.results.length} taxa`
+                            ),
+                            isFiltered ? button({
+                                type: "button",
+                                class: "outline",
+                                style: "padding: 0.2rem 0.55rem; font-size: 0.75rem; margin-bottom: 0;",
+                                onclick: () => {
+                                    filterText.val = "";
+                                    selectedStatus.val = "ALL";
+                                    selectedSystem.val = "ALL";
+                                    const searchInput = document.getElementById("search");
+                                    if (searchInput) searchInput.value = "";
+                                    const statusSelect = document.getElementById("status-filter");
+                                    if (statusSelect) statusSelect.value = "ALL";
+                                    const sysSelect = document.getElementById("system-filter");
+                                    if (sysSelect) sysSelect.value = "ALL";
+                                }
+                            }, "Reset Filters") : null
+                        )
+                    ),
+                    div({ class: "table-responsive" },
+                        table({ class: "striped" },
+                            thead(
+                                tr(
+                                    th({ scope: "col" }, "Organism Name"),
+                                    ...reportData.all_systems.map(sys => th({ scope: "col", style: "text-align: center; white-space: nowrap;" }, sys)),
+                                    th({ scope: "col", style: "white-space: nowrap;" }, "Status"),
+                                    th({ scope: "col" }, "Reason / Clinical Note"),
+                                    th({ scope: "col" }, "Replacement (for Invalid) / Suggestions (for Unmatched)"),
+                                    th({ scope: "col" }, "Domain Impact")
+                                )
+                            ),
+                            tbody(
+                                filtered.length === 0 ?
+                                    tr(td({ colspan: 5 + reportData.all_systems.length, style: "text-align: center; opacity: 0.7; padding: 2rem;" }, "No matching taxa found.")) :
+                                    filtered.map(r => tr(
+                                        td(
+                                            span({ class: "taxon-name" }, r.taxon),
+                                            r.aliases && r.aliases.length > 0 ? div({ class: "taxon-aliases" },
+                                                "Aliases: ",
+                                                ...r.aliases.map((alias, idx) => span({ style: "font-style: italic" }, alias, idx < r.aliases.length - 1 ? ", " : ""))
+                                            ) : null
+                                        ),
+                                        ...reportData.all_systems.map(sys => td({ class: "system-presence" },
+                                            r.active_systems.includes(sys)
+                                                ? span({ class: "sys-badge-active", title: `${sys}: Active` }, "●")
+                                                : span({ class: "sys-badge-inactive", title: `${sys}: Inactive` }, "—")
+                                        )),
+                                        td(renderBadge(r.validation.status)),
+                                        td(r.validation.reason || span({ style: "opacity: 0.4;" }, "—")),
+                                        // Combined Column: Replacement (for invalid) OR Suggestions (for unmatched)
+                                        td(
+                                            r.validation.replacement ? (
+                                                span({ class: "taxon-name replacement-name" }, "➔ ", r.validation.replacement)
+                                            ) : (r.validation.suggestions && r.validation.suggestions.length > 0) ? (
+                                                div({ class: "suggestions-list" },
+                                                    ...r.validation.suggestions.map(s =>
+                                                        div({ class: "suggestion-item" },
+                                                            span({ class: "taxon-name" }, s.name),
+                                                            span({ class: "suggestion-score" }, typeof s.score === 'number' ? s.score.toFixed(3) : s.score)
+                                                        )
+                                                    )
+                                                )
+                                            ) : (
+                                                span({ style: "opacity: 0.4;" }, "—")
+                                            )
+                                        ),
+                                        td(
+                                            (r.impact.lost.length === 0 && r.impact.gained.length === 0) ?
+                                                span({ style: "opacity: 0.4;" }, "None") :
+                                                div({ class: "impact-list" },
+                                                    ...r.impact.lost.map(imp => span({ class: "tag-lost", title: `Impact: Removed from ${imp.domain}` }, `− ${imp.domain}: ${imp.group}`)),
+                                                    ...r.impact.gained.map(imp => span({ class: "tag-gained", title: `Impact: Added to ${imp.domain}` }, `+ ${imp.domain}: ${imp.group}`))
+                                                )
+                                        )
+                                    ))
+                            )
+                        )
+                    )
+                );
+            };
+        };
+
+        // App Entry Point
+        const App = () => {
+            return div({},
+                Header(),
+                KpiDashboard(),
+                AuditTrail(),
+                FiltersToolbar(),
+                ResultsTable()
+            );
+        };
+
+        van.add(document.getElementById("app"), App());
+    </script>
+</body>
+
+</html>

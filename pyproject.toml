@@ -1,0 +1,51 @@
+[project]
+name = "nomman"
+version = "0.6.0"
+description = "CLI program for managing nomenclature in clinical microbiology lab"
+readme = "README.md"
+authors = [{ name = "Nomman maintainers"}]
+requires-python = ">=3.13"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE.txt"]
+dependencies = [
+    "charset-normalizer>=3.5.1",
+    "keyring>=25.7.0",
+    "lpsn>=1.0.0",
+    "psutil>=7.2.2",
+    "python-calamine>=0.8.2",
+    "rapidfuzz>=3.14.6",
+]
+
+[project.scripts]
+nomman = "nomman.main:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13"]
+build-backend = "uv_build"
+
+[tool.pytest]
+minversion = "9.1.1"
+addopts = ["--import-mode=importlib", "-ra", "-q"]
+testpaths = ["tests", "integration"]
+python_files = ["test_*.py", "check_*.py"]
+
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "@abstractmethod",
+    "logger\\.info\\(.*\\)",
+    "logger\\.debug\\(.*\\)",
+    "logger = logging\\.getLogger\\(__name__\\)",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "RUF", "C901"]
+ignore = ["RUF100", "UP015"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
